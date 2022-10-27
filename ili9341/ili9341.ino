@@ -30,11 +30,11 @@
 #define NUM_ALIEN_COLUMNS 7
 #define NUM_ALIEN_ROWS 3
 #define Y_START_POS 0
-#define X_START_OFFSET 6 // POSICION DE SEPARACIÓN ENTRE BORDE DE PANTALLA Y ALIEN
-#define SPACE_BETWEEN_ALIEN_COLUMNS 1
+#define X_START_OFFSET 10 // POSICION DE SEPARACIÓN ENTRE BORDE DE PANTALLA Y ALIEN
+#define SPACE_BETWEEN_ALIEN_COLUMNS 15
 #define LARGEST_ALIEN_WIDTH 24
 #define ALIEN_HEIGHT 16
-#define SPACE_BETWEEN_ROWS 9
+#define SPACE_BETWEEN_ROWS 26
 #define INVADERS_DROP_BY 4 // PIXELES QUE LOS INVADERS SE MUEVEN HACIA ABAJO
 #define INVADERS_SPEED 12  // VELOCIDAD DE MOVIMIENTO ENTRE MÁS ALTO VALOR MÁS LENTO
 #define ACTIVE 0
@@ -52,6 +52,19 @@ int DPINS[] = {PB_0, PB_1, PB_2, PB_3, PB_4, PB_5, PB_6, PB_7};
 //***************************************************************************************************************************************
 int acrossDisp = 0;
 int downDisp = 0;
+int acrossMov = 0;
+int downMov = 0;
+int AcrossRMP = NUM_ALIEN_COLUMNS - 1;
+int DownRMP = 0;
+int Largest = 0;
+int RightPos;
+int AcrossLMP = 0;
+int DownLMP = 0;
+int Smallest = SCREEN_WIDTH*2;
+
+int previousMillis = 0;
+int previousMillis2 = 0;
+int previousMillis3 = 0;
 struct GameObjectStruct{
   signed int X;
   signed int Y;
@@ -61,12 +74,21 @@ struct AlienStruct{
   GameObjectStruct Ord;
 };
 AlienStruct Alien[NUM_ALIEN_COLUMNS][NUM_ALIEN_ROWS]; // ARREGLO DE ALIENS EN LA PANTALLA
-byte AlienWidth[]={24,11,12};
+byte AlienWidth[]={16, 22, 24};
 
 char AlienXMoveAmount=2;
-signed char InvadersMoveCounter;
-bool activeFrame =false;
-
+int moveByXAmount = 0;
+int moveByXAmount1 = 0;
+int moveByXAmount2 = 0;
+int moveByXAmount3 = 0;
+int moveByYAmount = 0;
+signed char InvadersMoveCounter = 0;
+int activeFrame = 1;
+int frameCount = 0;
+bool lowered = false;
+int moveInvaderTime = 3;
+int moveInvaderTime2 = 5;
+int moveInvader = 0;
 //***************************************************************************************************************************************
 // Functions Prototypes
 //***************************************************************************************************************************************
@@ -84,7 +106,11 @@ void LCD_Bitmap(unsigned int x, unsigned int y, unsigned int width, unsigned int
 void LCD_Sprite(int x, int y, int width, int height, unsigned char bitmap[],int columns, int index, char flip, char offset);
 void UpdateInvaders(void);
 void initInvaders(int Y_initial);
-
+void invaderControl(void);
+int RightMostPos(void);
+int LeftMostPos(void);
+void posControl(void);
+void animationUpdate(void);
 
 //***************************************************************************************************************************************
 // Inicialización
@@ -102,46 +128,223 @@ void setup() {
   LCD_Clear(0x0000);
   // Referencia para colores RGB565: http://www.rinkydinkelectronics.com/calc_rgb565.php
   initInvaders(Y_START_POS);
-
+  pinMode(6, OUTPUT);
  
 }
 //***************************************************************************************************************************************
 // Loop Infinito
 //***************************************************************************************************************************************
-//void loop() {
+
 void loop() {
 
   // PRESIÓN DE BOTONES
-  //UpdateInvaders();
+  //invaderControl();
+  animationUpdate();
+  UpdateInvaders();
+    
 }
 
 
 
 
 void initInvaders(int Y_initial){
-  for (int across = 0; across < NUM_ALIEN_COLUMNS; across++){
-    for (int down = 0; down < 1; down++){
+  for (int across = 0; across < NUM_ALIEN_COLUMNS; across++){ 
+    for (int down = 0; down < 3; down++){
       Alien[across][down].Ord.X = X_START_OFFSET + (across *(LARGEST_ALIEN_WIDTH + SPACE_BETWEEN_ALIEN_COLUMNS)) - down;
       Alien[across][down].Ord.Y = Y_initial + (down * SPACE_BETWEEN_ROWS);
+      Alien[across][down].Ord.Status = ACTIVE;
     }
   }
 }
 
 
 void UpdateInvaders(void){
-  if (acrossDisp < NUM_ALIEN_COLUMNS){
-    acrossDisp++;
+  if (acrossDisp < NUM_ALIEN_COLUMNS) {
     if (downDisp < NUM_ALIEN_ROWS){
-      downDisp++;
       switch(downDisp){
         case 0:
-          LCD_Bitmap(Alien[acrossDisp][downDisp].Ord.X, Alien[acrossDisp][downDisp].Ord.Y, AlienWidth[0], ALIEN_HEIGHT, invader1_frame1);
+          if (activeFrame  == 1){
+            LCD_Bitmap(Alien[acrossDisp][downDisp].Ord.X+=moveByXAmount1, Alien[acrossDisp][downDisp].Ord.Y+=moveByYAmount, AlienWidth[downDisp], ALIEN_HEIGHT, invader3_frame1);
+            if (moveByXAmount1 == 1){
+              V_line(Alien[acrossDisp][downDisp].Ord.X-1, Alien[acrossDisp][downDisp].Ord.Y, ALIEN_HEIGHT, 0x0000);
+            }
+            else if (moveByXAmount1 == -1){
+              V_line(Alien[acrossDisp][downDisp].Ord.X+AlienWidth[downDisp], Alien[acrossDisp][downDisp].Ord.Y, ALIEN_HEIGHT, 0x0000);
+            }
+          }
+          else {
+            LCD_Bitmap(Alien[acrossDisp][downDisp].Ord.X+=moveByXAmount1, Alien[acrossDisp][downDisp].Ord.Y+=moveByYAmount, AlienWidth[downDisp], ALIEN_HEIGHT, invader3_frame2);
+            if (moveByXAmount1 == 1){
+              V_line(Alien[acrossDisp][downDisp].Ord.X-1, Alien[acrossDisp][downDisp].Ord.Y, ALIEN_HEIGHT, 0x0000);
+            }
+            else if (moveByXAmount1 == -1){
+              V_line(Alien[acrossDisp][downDisp].Ord.X+AlienWidth[downDisp], Alien[acrossDisp][downDisp].Ord.Y, ALIEN_HEIGHT, 0x0000);
+            }
+          }
+          break;
+        case 1:
+          if (activeFrame == 1){
+            LCD_Bitmap(Alien[acrossDisp][downDisp].Ord.X+=moveByXAmount2, Alien[acrossDisp][downDisp].Ord.Y+=moveByYAmount, AlienWidth[downDisp], ALIEN_HEIGHT, invader2_frame1);
+            if (moveByXAmount2 == 1){
+              V_line(Alien[acrossDisp][downDisp].Ord.X-1, Alien[acrossDisp][downDisp].Ord.Y, ALIEN_HEIGHT, 0x0000);
+            }
+            else if (moveByXAmount2 == -1){
+              V_line(Alien[acrossDisp][downDisp].Ord.X+AlienWidth[downDisp], Alien[acrossDisp][downDisp].Ord.Y, ALIEN_HEIGHT, 0x0000);
+            }
+          }
+          else {
+            LCD_Bitmap(Alien[acrossDisp][downDisp].Ord.X+=moveByXAmount2, Alien[acrossDisp][downDisp].Ord.Y+=moveByYAmount, AlienWidth[downDisp], ALIEN_HEIGHT, invader2_frame2);
+            if (moveByXAmount2 == 1){
+              V_line(Alien[acrossDisp][downDisp].Ord.X-1, Alien[acrossDisp][downDisp].Ord.Y, ALIEN_HEIGHT, 0x0000);
+            }
+            else if (moveByXAmount2 == -1){
+              V_line(Alien[acrossDisp][downDisp].Ord.X+AlienWidth[downDisp], Alien[acrossDisp][downDisp].Ord.Y, ALIEN_HEIGHT, 0x0000);
+            }
+          }
           break;
         default:
-          LCD_Bitmap(Alien[acrossDisp][downDisp].Ord.X, Alien[acrossDisp][downDisp].Ord.Y, AlienWidth[0], ALIEN_HEIGHT, invader1_frame1);
+          if (activeFrame  == 1){
+            LCD_Bitmap(Alien[acrossDisp][downDisp].Ord.X+=moveByXAmount3, Alien[acrossDisp][downDisp].Ord.Y+=moveByYAmount, AlienWidth[downDisp], ALIEN_HEIGHT, invader1_frame1);
+            if (moveByXAmount3 == 1){
+              V_line(Alien[acrossDisp][downDisp].Ord.X-1, Alien[acrossDisp][downDisp].Ord.Y, ALIEN_HEIGHT, 0x0000);
+            }
+            else if (moveByXAmount3 == -1){
+              V_line(Alien[acrossDisp][downDisp].Ord.X+AlienWidth[downDisp], Alien[acrossDisp][downDisp].Ord.Y, ALIEN_HEIGHT, 0x0000);
+            }
+          }
+          else {
+            LCD_Bitmap(Alien[acrossDisp][downDisp].Ord.X+=moveByXAmount3, Alien[acrossDisp][downDisp].Ord.Y+=moveByYAmount, AlienWidth[downDisp], ALIEN_HEIGHT, invader1_frame2);
+            if (moveByXAmount3 == 1){
+              V_line(Alien[acrossDisp][downDisp].Ord.X-1, Alien[acrossDisp][downDisp].Ord.Y, ALIEN_HEIGHT, 0x0000);
+            }
+            else if (moveByXAmount3 == -1){
+              V_line(Alien[acrossDisp][downDisp].Ord.X+AlienWidth[downDisp], Alien[acrossDisp][downDisp].Ord.Y, ALIEN_HEIGHT, 0x0000);
+            }
+          }
+      }
+      if (acrossDisp == (NUM_ALIEN_COLUMNS-1)){
+        downDisp++;
+        acrossDisp = -1;
       }
     }
+    acrossDisp++;
   }
+  moveInvader++;
+  if (acrossDisp == (NUM_ALIEN_COLUMNS-1) & downDisp == (NUM_ALIEN_ROWS-1)){
+    acrossDisp = 0;
+    downDisp = 0;   
+    posControl();   
+  }
+}
+
+void posControl(void){
+  unsigned long currentMillis = millis();
+  unsigned long currentMillis3 = millis();
+  if ((currentMillis - previousMillis) > 1000 & (currentMillis - previousMillis) < 2005){
+    moveByXAmount1 = 1;
+    moveByXAmount2 = 1;
+    moveByXAmount3 = 1;
+    digitalWrite(6, HIGH);
+  }
+  else if((currentMillis3 - previousMillis3) >= 2000 & (currentMillis3 - previousMillis3) < 20000){
+    moveByXAmount1 = -1;
+    moveByXAmount2 = -1;
+    moveByXAmount3 = -1;
+    digitalWrite(6, LOW);    
+    previousMillis = currentMillis;
+    previousMillis3 = currentMillis3;
+  }
+}
+
+void animationUpdate(void){
+  unsigned long currentMillis2 = millis();
+  if ((currentMillis2 - previousMillis2) > 1000){
+    activeFrame = !activeFrame;
+    previousMillis2 = currentMillis2;
+  }
+}
+
+void invaderControl(void){
+  if ((InvadersMoveCounter--)<0){
+    lowered = false;
+    if ((RightMostPos() + AlienXMoveAmount >= SCREEN_WIDTH) | (LeftMostPos() + AlienXMoveAmount < 0)){
+      AlienXMoveAmount = -AlienXMoveAmount;
+      lowered = true;
+    }
+    if (acrossMov < NUM_ALIEN_COLUMNS){
+      if (downMov < 3){
+        if (Alien[acrossMov][downMov].Ord.Status == ACTIVE){
+          if (lowered == false){
+            Alien[acrossMov][downMov].Ord.X = Alien[acrossMov][downMov].Ord.X + AlienXMoveAmount;
+            digitalWrite(6, LOW);
+          }
+          else {
+            Alien[acrossMov][downMov].Ord.Y += INVADERS_DROP_BY;
+            
+          }
+          if (acrossMov == (NUM_ALIEN_COLUMNS-1)){
+            downMov++;
+            acrossMov = -1;
+          }
+        }       
+        acrossMov++;
+      }     
+      InvadersMoveCounter = INVADERS_SPEED;
+      digitalWrite(6, HIGH);
+      //activeFrame = !activeFrame;
+    }/*
+    if (acrossMov == (NUM_ALIEN_COLUMNS-1) & downMov == (NUM_ALIEN_ROWS-1)){
+      downMov = 0;
+      acrossMov = 0;
+    }*/
+  }
+  
+}
+
+int RightMostPos(void){
+  if (AcrossRMP>=0){
+    if (DownRMP < NUM_ALIEN_ROWS){
+      if (Alien[AcrossRMP][DownRMP].Ord.Status == ACTIVE){
+        RightPos = Alien[AcrossRMP][DownRMP].Ord.X + AlienWidth[DownRMP];
+        if (RightPos > Largest){Largest = RightPos;}
+      }
+      DownRMP++;
+    }
+    if (Largest > 0){
+      return Largest;
+    }
+    AcrossRMP--;
+  }
+  else if (AcrossRMP < 0){
+    AcrossRMP = NUM_ALIEN_COLUMNS-1;
+    DownRMP = 0;
+    Largest = 0;
+    RightPos = 0;
+  }
+  //return 0;
+}
+
+int LeftMostPos(void){
+  if (AcrossLMP < NUM_ALIEN_COLUMNS){
+    if (DownLMP < 3){
+      if (Alien[AcrossLMP][DownLMP].Ord.Status == ACTIVE){
+        if (Alien[AcrossLMP][DownLMP].Ord.X < Smallest){
+          Smallest = Alien[AcrossLMP][DownLMP].Ord.X;
+        }
+      }
+      DownLMP++;
+    }
+    if (Smallest < SCREEN_WIDTH*2){
+      return Smallest;
+    }
+    AcrossLMP++;
+  }
+  else if (AcrossLMP == (NUM_ALIEN_COLUMNS-1)){
+    AcrossLMP = 0;
+    DownLMP = 0;
+    Smallest = SCREEN_WIDTH*2;
+  }
+  //return 0;
 }
 
 //***************************************************************************************************************************************
