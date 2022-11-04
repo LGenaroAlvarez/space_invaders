@@ -160,6 +160,9 @@ int inicio = 0;
 int mainMenu = 0;
 int menu = 5;
 int select1 = 0;
+const int start_PB = PA_6; //9
+const int J1_Move = PA_7; //10
+const int J2_Move = PE_3; //29
 int serialState = 1;
 int player1_final_score = 0;
 int player2_final_score = 0;
@@ -245,28 +248,27 @@ void setup() {
   pinMode (11, INPUT_PULLUP);
   pinMode (13, INPUT_PULLUP);
   pinMode (12, INPUT_PULLUP);
-  pinMode (6, INPUT_PULLUP);
-  pinMode (9, INPUT_PULLUP);*/
-  pinMode (PUSH2, INPUT_PULLUP);
-  pinMode (PUSH1, INPUT_PULLUP);
+  pinMode (6, INPUT_PULLUP);*/
+  pinMode (start_PB, INPUT_PULLUP);
+  pinMode (J1_Move, INPUT_PULLUP);
+  pinMode (J2_Move, INPUT_PULLUP);
 }
 //***************************************************************************************************************************************
 // Loop Infinito
 //***************************************************************************************************************************************
 //void loop() {
 void loop() {
-  if (serialState == 1){
-    if (Serial2.available()){
-      dataIn1 = Serial2.read();
-    }
-    if (Serial3.available()){
-      dataIn2 = Serial3.read();
-      Serial.println(dataIn1);
-    }
-  }  
+  if (Serial2.available()){
+    dataIn1 = Serial2.read();
+  }
+  if (Serial3.available()){
+    dataIn2 = Serial3.read();
+    Serial.println(dataIn1);
+  }
+    
   if (startScreen == 1){
-    if(digitalRead(PUSH2) == LOW){
-      while(digitalRead(PUSH2) == LOW);
+    if(digitalRead(start_PB) == LOW){
+      while(digitalRead(start_PB) == LOW);
       LCD_Clear(0x0000);
       startScreen = 0;
       mainMenu = 1;
@@ -279,9 +281,8 @@ void loop() {
       LCD_Print(shipSel, (SCREEN_WIDTH/2) - 88, (SCREEN_HEIGHT/2) + 20, 2, 0xFFFF, 0x0000);
       menu = 4;
     }
-    if (/*digitalRead(PUSH1) == LOW | */dataIn1 == 0x31 & select1 == 0){ //bajar de opcion
-      delay(500);
-      dataIn1 = 0;
+    if (digitalRead(J1_Move) == LOW){ //bajar de opcion
+      while(digitalRead(J1_Move) == LOW);
       if (menu == 5){
         menu = 0;
       }
@@ -290,13 +291,13 @@ void loop() {
         menu = 0;
       }      
     }
+    
     if (menu == 1){
       if (select1 == 0){
         FillRect((SCREEN_WIDTH/2) - 92 - SHIP_W, (SCREEN_HEIGHT/2) +16, SHIP_W, SHIP_H, 0x0000);
         LCD_Bitmap((SCREEN_WIDTH/2) - 40 - SHIP_W, (SCREEN_HEIGHT/2) - (SHIP_H/2), SHIP_W, SHIP_H, nave_amarilla);      
-        if (dataIn1 == 0x33 /*0x3 = fire/select*/){
-          delay(500);
-          dataIn1 = 0;
+        if (digitalRead(start_PB) == LOW){
+          while(digitalRead(start_PB) == LOW);
           select1 = 0;          
           inicio = 1;
           mainMenu = 0;
@@ -308,10 +309,9 @@ void loop() {
       if (select1 == 0){
         FillRect((SCREEN_WIDTH/2) - 40 - SHIP_W, (SCREEN_HEIGHT/2) - (SHIP_H/2), SHIP_W, SHIP_H, 0x0000);
         LCD_Bitmap((SCREEN_WIDTH/2) - 92 - SHIP_W, (SCREEN_HEIGHT/2) +16, SHIP_W, SHIP_H, nave_amarilla);    
-        if (dataIn1 == 0x33 /*0x3 = fire/select*/){
+        if (digitalRead(start_PB) == LOW){
+          while(digitalRead(start_PB) == LOW);
           select1 = 1;
-          delay(500); 
-          dataIn1 = 0;
           LCD_Clear(0x0000);
           FillRect((SCREEN_WIDTH/2) - 92 - SHIP_W, (SCREEN_HEIGHT/2) +16, SHIP_W, SHIP_H, 0x0000);
           LCD_Print("PLAYER 1", 10, 50, 2, 0xFFFF, 0x0000);
@@ -375,72 +375,76 @@ void Timer0IntHandler() {
 }
 
 void playerShipSelect(void){
-  unsigned long currentMillis14 = millis();
-  if(currentMillis14 - previousMillis14 > intervalo3){
-    if (dataIn1 == 0x31 /*0x31 = derecha J1*/){
-      serialState = 0;
-      dataIn1 = 0;
-      ship_select1+=1;    
-      if (ship_select1 > 5){
-        ship_select1 = 0;
-      }
+  if (digitalRead(J1_Move) == LOW){
+    while(digitalRead(J1_Move) == LOW);
+    ship_select1+=1;    
+    if (ship_select1 > 5){
+      ship_select1 = 0;
     }
-    if (dataIn2 == 0x34 /*0x34 = derecha J2*/){
-      dataIn2 = 0;
-      //delay(550);
-      ship_select2+=1;
-      if (ship_select2 > 5){
-        ship_select2 = 0;
-      }
-    }
-    previousMillis14 = currentMillis14;
   }
-  if (currentMillis14 - previousMillis14 < intervalo3){
-    dataIn1 = 0;
-    dataIn2 = 0;
+  if (digitalRead(J2_Move) == LOW){
+    while(digitalRead(J2_Move) == LOW);
+    ship_select2+=1;
+    if (ship_select2 > 5){
+      ship_select2 = 0;
+    }
   }
   
-  if (digitalRead(PUSH2 /*PUSH2 = START*/) == LOW){
-    delay(400);
+  if (digitalRead(start_PB) == LOW){
+    while(digitalRead(start_PB) == LOW);
     select1 = 0;
     menu = 5;
   }
   switch (ship_select1){
     case 0:
-      Rect(10+(5*SHIP_W+50), 70, SHIP_W, SHIP_H, 0x000);
+      Rect(10+(5*SHIP_W+50), 70, SHIP_W, SHIP_H, 0x0000);
       Rect(10, 70, SHIP_W, SHIP_H, 0xFFFF);
-      delay(550);
-      serialState = 1;
       break;
     case 1:
       Rect(10, 70, SHIP_W, SHIP_H, 0x0000);
       Rect(10+(1*SHIP_W+10), 70, SHIP_W, SHIP_H, 0xFFFF);
-      delay(550);
-      serialState = 1;
       break;
     case 2:
       Rect(10+(1*SHIP_W+10), 70, SHIP_W, SHIP_H, 0x0000);
       Rect(10+(2*SHIP_W+20), 70, SHIP_W, SHIP_H, 0xFFFF);
-      delay(550);
-      serialState = 1;
       break;
     case 3:
       Rect(10+(2*SHIP_W+20), 70, SHIP_W, SHIP_H, 0x0000);
       Rect(10+(3*SHIP_W+30), 70, SHIP_W, SHIP_H, 0xFFFF);
-      delay(550);
-      serialState = 1;
       break;
     case 4:
       Rect(10+(3*SHIP_W+30), 70, SHIP_W, SHIP_H, 0x0000);
       Rect(10+(4*SHIP_W+40), 70, SHIP_W, SHIP_H, 0xFFFF);
-      delay(550);
-      serialState = 1;
       break;
     case 5:
       Rect(10+(4*SHIP_W+40), 70, SHIP_W, SHIP_H, 0x0000);
       Rect(10+(5*SHIP_W+50), 70, SHIP_W, SHIP_H, 0xFFFF);
-      delay(550);
-      serialState = 1;
+      break;
+  }
+  switch (ship_select2){
+    case 0:
+      Rect(SCREEN_WIDTH-30-(5*SHIP_W+50), SCREEN_HEIGHT-70, SHIP_W, SHIP_H, 0x0000);
+      Rect(SCREEN_WIDTH-30, SCREEN_HEIGHT-70, SHIP_W, SHIP_H, 0xFFFF);
+      break;
+    case 1:
+      Rect(SCREEN_WIDTH-30, SCREEN_HEIGHT-70, SHIP_W, SHIP_H, 0x0000);
+      Rect(SCREEN_WIDTH-30-(1*SHIP_W+10), SCREEN_HEIGHT-70, SHIP_W, SHIP_H, 0xFFFF);
+      break;
+    case 2:
+      Rect(SCREEN_WIDTH-30-(1*SHIP_W+10), SCREEN_HEIGHT-70, SHIP_W, SHIP_H, 0x0000);
+      Rect(SCREEN_WIDTH-30-(2*SHIP_W+20), SCREEN_HEIGHT-70, SHIP_W, SHIP_H, 0xFFFF);
+      break;
+    case 3:
+      Rect(SCREEN_WIDTH-30-(2*SHIP_W+20), SCREEN_HEIGHT-70, SHIP_W, SHIP_H, 0x0000);
+      Rect(SCREEN_WIDTH-30-(3*SHIP_W+30), SCREEN_HEIGHT-70, SHIP_W, SHIP_H, 0xFFFF);
+      break;
+    case 4:
+      Rect(SCREEN_WIDTH-30-(3*SHIP_W+30), SCREEN_HEIGHT-70, SHIP_W, SHIP_H, 0x0000);
+      Rect(SCREEN_WIDTH-30-(4*SHIP_W+40), SCREEN_HEIGHT-70, SHIP_W, SHIP_H, 0xFFFF);
+      break;
+    case 5:
+      Rect(SCREEN_WIDTH-30-(4*SHIP_W+40), SCREEN_HEIGHT-70, SHIP_W, SHIP_H, 0x0000);
+      Rect(SCREEN_WIDTH-30-(5*SHIP_W+50), SCREEN_HEIGHT-70, SHIP_W, SHIP_H, 0xFFFF);
       break;
   }
 }
