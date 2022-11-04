@@ -163,10 +163,10 @@ int select1 = 0;
 const int start_PB = PA_6; //9
 const int J1_Move = PA_7; //10
 const int J2_Move = PE_3; //29
-int serialState = 1;
 int player1_final_score = 0;
 int player2_final_score = 0;
 int num_aliens_destroyed;
+int level = 0;
 File Archivo;
 
 //***************************************************************************************************************************************
@@ -206,6 +206,8 @@ void missileAlienCollision(void);
 void LCD_BitmapSD(int x, int y, int width, int height, String TXT);
 bool collisionCheck(int missile_x, int missile_y, int mi_W, int mi_H, GameObjectStruct Obj, unsigned char width, unsigned char height);
 void playerShipSelect(void);
+void credits(void);
+void nextLevel(void);
 
 //***************************************************************************************************************************************
 // Inicialización
@@ -232,20 +234,20 @@ void setup() {
   // Inicialización de la pantalla
   LCD_Init();
   LCD_Clear(0x0000);
-  //LCD_Print("PRESS START", (320/2) - 96, 240/2, 2, 0xFFFF, 0x0000);
-  
+  LCD_Print("PRESS START", (320/2) - 96, 240/2, 2, 0xFFFF, 0x0000);
+  /*
 
   // Referencia para colores RGB565: http://www.rinkydinkelectronics.com/calc_rgb565.php
   SPI.setModule(0);
   pinMode(chipSelect, OUTPUT);
   while (!SD.begin(chipSelect)){
     Serial.println("No hay SD");  
-  }
+  }*/
   player1_final_score = 0;
   sprintf (score1, "%d", player1_final_score);
   player2_final_score = 0;
   sprintf (score2, "%d", player2_final_score);
-  LCD_BitmapSD(0, 0, 320, 240, "startpic.txt");
+  //LCD_BitmapSD(0, 0, 320, 240, "startpic.txt");
   /*
   pinMode (11, INPUT_PULLUP);
   pinMode (13, INPUT_PULLUP);
@@ -254,6 +256,8 @@ void setup() {
   pinMode (start_PB, INPUT_PULLUP);
   pinMode (J1_Move, INPUT_PULLUP);
   pinMode (J2_Move, INPUT_PULLUP);
+  //pinMode (PUSH1, INPUT_PULLUP);
+  //pinMode (PUSH2, INPUT_PULLUP);
 }
 //***************************************************************************************************************************************
 // Loop Infinito
@@ -279,8 +283,8 @@ void loop() {
   if (mainMenu == 1){
     if (menu == 5){
       LCD_Clear(0x0000);
-      LCD_Print(play, (SCREEN_WIDTH/2) - 36, (SCREEN_HEIGHT/2) - 8, 2, 0xFFFF, 0x0000);
-      LCD_Print(shipSel, (SCREEN_WIDTH/2) - 88, (SCREEN_HEIGHT/2) + 20, 2, 0xFFFF, 0x0000);
+      LCD_Print(play, (SCREEN_WIDTH/2) - 36, (SCREEN_HEIGHT/2) - 38, 2, 0xFFFF, 0x0000);
+      LCD_Print(shipSel, (SCREEN_WIDTH/2) - 90, (SCREEN_HEIGHT/2) + 10, 2, 0xFFFF, 0x0000);
       menu = 4;
     }
     if (digitalRead(J1_Move) == LOW & select1 == 0){ //bajar de opcion
@@ -290,14 +294,18 @@ void loop() {
       }
       menu++;
       if (menu > 2){
-        menu = 0;
+        menu = 1;
       }      
     }
-    
+    if (digitalRead(J1_Move) == LOW & digitalRead(J2_Move) == LOW & select1 == 0){
+      while(digitalRead(J1_Move) == LOW | digitalRead(J2_Move) == LOW);
+      select1 = 2;
+      credits();
+    }
     if (menu == 1){
       if (select1 == 0){
-        FillRect((SCREEN_WIDTH/2) - 92 - SHIP_W, (SCREEN_HEIGHT/2) +16, SHIP_W, SHIP_H, 0x0000);
-        LCD_Bitmap((SCREEN_WIDTH/2) - 40 - SHIP_W, (SCREEN_HEIGHT/2) - (SHIP_H/2), SHIP_W, SHIP_H, nave_amarilla);      
+        FillRect((SCREEN_WIDTH/2) - 94 - SHIP_W, (SCREEN_HEIGHT/2) + 8, SHIP_W, SHIP_H, 0x0000);
+        LCD_Bitmap((SCREEN_WIDTH/2) - 40 - SHIP_W, (SCREEN_HEIGHT/2) - 28 - (SHIP_H/2), SHIP_W, SHIP_H, nave_amarilla);      
         if (digitalRead(start_PB) == LOW){
           while(digitalRead(start_PB) == LOW);
           select1 = 0;          
@@ -309,8 +317,8 @@ void loop() {
     }
     if (menu == 2){
       if (select1 == 0){
-        FillRect((SCREEN_WIDTH/2) - 40 - SHIP_W, (SCREEN_HEIGHT/2) - (SHIP_H/2), SHIP_W, SHIP_H, 0x0000);
-        LCD_Bitmap((SCREEN_WIDTH/2) - 92 - SHIP_W, (SCREEN_HEIGHT/2) +16, SHIP_W, SHIP_H, nave_amarilla);    
+        FillRect((SCREEN_WIDTH/2) - 40 - SHIP_W, (SCREEN_HEIGHT/2) - 28 - (SHIP_H/2), SHIP_W, SHIP_H, 0x0000);
+        LCD_Bitmap((SCREEN_WIDTH/2) - 94 - SHIP_W, (SCREEN_HEIGHT/2) + 8, SHIP_W, SHIP_H, nave_amarilla);    
         if (digitalRead(start_PB) == LOW){
           while(digitalRead(start_PB) == LOW);
           select1 = 1;
@@ -358,11 +366,46 @@ void loop() {
     missileAlienCollision();  
   }
   if(num_aliens_destroyed == 20){
-    on = 0;
-    LCD_Clear(0x0000);
-    inicio = 1;
-    num_aliens_destroyed = 0;
-    FillRect(0, 20, SCREEN_WIDTH, 2, 0xFFFF);
+    level++;
+    if (level > 2 & player1_final_score > player2_final_score){
+      LCD_Clear(0x0000);
+      LCD_BitmapSD(0, 0, 320, 240, "player1winner.txt");
+      delay(5000);
+      level = 0;
+      on = 0;
+      inicio = 0;
+      menu = 5;
+      mainMenu = 1;
+    }
+    else if (level > 2 & player1_final_score < player2_final_score){
+      LCD_Clear(0x0000);
+      LCD_BitmapSD(0, 0, 320, 240, "player2winner.txt");
+      delay(5000);
+      level = 0;
+      on = 0;
+      inicio = 0;
+      menu = 5;
+      mainMenu = 1;
+    }
+    else if (level > 2 & player1_final_score == player2_final_score){
+      LCD_Clear(0x0000);
+      LCD_BitmapSD(0, 0, 320, 240, "tieGame.txt");
+      delay(5000);
+      level = 0;
+      on = 0;
+      inicio = 0;
+      menu = 5;
+      mainMenu = 1;
+    }
+    else {
+      on = 0;
+      LCD_Clear(0x0000);
+      inicio = 1;
+      num_aliens_destroyed = 0;
+      FillRect(0, 20, SCREEN_WIDTH, 2, 0xFFFF);
+      nextLevel();
+      delay(4000);
+    }
   }
 }
 
@@ -450,35 +493,38 @@ void playerShipSelect(void){
   }
 }
 
+void credits(void){
+  LCD_Clear(0x0000);
+  LCD_Print("CODIGO POR:", 68, 60, 2, 0xFFFF, 0x0000);
+  LCD_Print("GENARO ALVAREZ", 44, 80, 2, 0xFFFF, 0x0000);
+  LCD_Print("JORGE CERON", 68, 100, 2, 0xFFFF, 0x0000);
+  LCD_Print("IMAGEN DE INICIO:", 30, 140, 2, 0xFFFF, 0x0000);
+  LCD_Print("PAOLA CHEWS", 68, 160, 2, 0xFFFF, 0x0000);
+  if (digitalRead(PUSH2) == LOW){
+    while(digitalRead(PUSH2) == LOW);
+    select1 = 0;
+    menu = 5;
+  }
+}
+
+void nextLevel(void){
+  switch(level){
+    case 1:
+      LCD_BitmapSD(0, 0, 320, 240, "cambio_nivel.txt");
+      LCD_Print("ROUND2", 74, 140, 2, 0xFFFF, 0x0000);
+      break;
+    case 2:
+      LCD_BitmapSD(0, 0, 320, 240, "cambio_nivel.txt");
+      LCD_Print("FINAL ROUND", 68, 140, 2, 0xFFFF, 0x0000);
+      break;
+  }
+}
+
 void shipInit(void){
   ship1_pos_Y = 235-SHIP_H;
   ship2_pos_Y = 235-SHIP_H;
-  switch(ship_select1){    
-    case 0:
-      LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_azul);
-      break;
-    case 1:
-      LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_naranja);
-      break;
-    case 2:
-      LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_verde);
-      break;
-    default:
-      break;
-  }
-  switch(ship_select2){
-    case 0:
-      LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_azul);
-      break;
-    case 1:
-      LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_naranja);
-      break;
-    case 2:
-      LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_verde);
-      break;
-    default:
-      break;
-  }  
+  shipSelect1();
+  shipSelect2(); 
 }
 
 void shipSelect1(void){
