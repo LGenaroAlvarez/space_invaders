@@ -186,6 +186,8 @@ void LCD_Print(String text, int x, int y, int fontSize, int color, int backgroun
 void LCD_Bitmap(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned char bitmap[]);
 void LCD_Sprite(int x, int y, int width, int height, unsigned char bitmap[],int columns, int index, char flip, char offset);
 void shipInit(void);
+void shipSelect1(void);
+void shipSelect2(void);
 void moveRControlAll(void);
 void moveRControl1(void);
 void moveRControl2(void);
@@ -230,20 +232,20 @@ void setup() {
   // Inicialización de la pantalla
   LCD_Init();
   LCD_Clear(0x0000);
-  LCD_Print("PRESS START", (320/2) - 96, 240/2, 2, 0xFFFF, 0x0000);
-  /*
+  //LCD_Print("PRESS START", (320/2) - 96, 240/2, 2, 0xFFFF, 0x0000);
+  
 
   // Referencia para colores RGB565: http://www.rinkydinkelectronics.com/calc_rgb565.php
   SPI.setModule(0);
   pinMode(chipSelect, OUTPUT);
   while (!SD.begin(chipSelect)){
     Serial.println("No hay SD");  
-  }*/
+  }
   player1_final_score = 0;
   sprintf (score1, "%d", player1_final_score);
   player2_final_score = 0;
   sprintf (score2, "%d", player2_final_score);
-  //LCD_BitmapSD(0, 0, 320, 240, "startpic.txt");
+  LCD_BitmapSD(0, 0, 320, 240, "startpic.txt");
   /*
   pinMode (11, INPUT_PULLUP);
   pinMode (13, INPUT_PULLUP);
@@ -281,9 +283,9 @@ void loop() {
       LCD_Print(shipSel, (SCREEN_WIDTH/2) - 88, (SCREEN_HEIGHT/2) + 20, 2, 0xFFFF, 0x0000);
       menu = 4;
     }
-    if (digitalRead(J1_Move) == LOW){ //bajar de opcion
+    if (digitalRead(J1_Move) == LOW & select1 == 0){ //bajar de opcion
       while(digitalRead(J1_Move) == LOW);
-      if (menu == 5){
+      if (menu == 4){
         menu = 0;
       }
       menu++;
@@ -305,7 +307,7 @@ void loop() {
         }
       }
     }
-    else if (menu == 2){
+    if (menu == 2){
       if (select1 == 0){
         FillRect((SCREEN_WIDTH/2) - 40 - SHIP_W, (SCREEN_HEIGHT/2) - (SHIP_H/2), SHIP_W, SHIP_H, 0x0000);
         LCD_Bitmap((SCREEN_WIDTH/2) - 92 - SHIP_W, (SCREEN_HEIGHT/2) +16, SHIP_W, SHIP_H, nave_amarilla);    
@@ -377,19 +379,18 @@ void Timer0IntHandler() {
 void playerShipSelect(void){
   if (digitalRead(J1_Move) == LOW){
     while(digitalRead(J1_Move) == LOW);
-    ship_select1+=1;    
+    ship_select1++;    
     if (ship_select1 > 5){
       ship_select1 = 0;
     }
   }
   if (digitalRead(J2_Move) == LOW){
     while(digitalRead(J2_Move) == LOW);
-    ship_select2+=1;
+    ship_select2++;
     if (ship_select2 > 5){
       ship_select2 = 0;
     }
   }
-  
   if (digitalRead(start_PB) == LOW){
     while(digitalRead(start_PB) == LOW);
     select1 = 0;
@@ -478,6 +479,56 @@ void shipInit(void){
     default:
       break;
   }  
+}
+
+void shipSelect1(void){
+  switch(ship_select1){    
+    case 0:
+      LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_naranja);
+      break;
+    case 1:
+      LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_azul);
+      break;
+    case 2:
+      LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_amarilla);
+      break;
+    case 3:
+      LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_aqua);
+      break;
+    case 4:
+      LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_morada);
+      break;
+    case 5:
+      LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_verde);
+      break;
+    default:
+      break;
+  }
+}
+
+void shipSelect2(void){
+  switch(ship_select2){
+    case 0:
+      LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_naranja);
+      break;
+    case 1:
+      LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_azul);
+      break;
+    case 2:
+      LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_amarilla);
+      break;
+    case 3:
+      LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_aqua);
+      break;
+    case 4:
+      LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_morada);
+      break;
+    case 5:
+      LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_verde);
+      break;
+    default:
+      break;
+  }
 }
 
 void movePlayers(void){ 
@@ -611,6 +662,7 @@ void missileControl(void){
   }
 }
 
+
 void moveLControl2(void){
   unsigned long currentMillis6 = millis();
   if (currentMillis6 - previousMillis6 > SHIP_SPEED){
@@ -622,21 +674,8 @@ void moveLControl2(void){
     }
     ship2_pos_X = x1;
     ship2_pos_Y = 235-SHIP_H;
-    switch(ship_select2){
-      case 0:
-        LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_azul);
-        break;
-      case 1:
-        LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_naranja);
-        break;
-      case 2:
-        LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_verde);
-        break;
-      default:
-        break;
-    }
+    shipSelect2();
     FillRect(x1+SHIP_W, ship2_pos_Y, 4, SHIP_H, 0x0000);
-    //V_line(x1 + SHIP_W, ship2_pos_Y, SHIP_H, 0x0000);
     previousMillis6 = currentMillis6;
   }  
 }
@@ -651,19 +690,7 @@ void moveLControl1(void){
     }
     ship1_pos_X = x;
     ship1_pos_Y = 235-SHIP_H;
-    switch(ship_select1){    
-      case 0:
-        LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_azul);
-        break;
-      case 1:
-        LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_naranja);
-        break;
-      case 2:
-        LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_verde);
-        break;
-      default:
-        break;
-    }
+    shipSelect1();
     FillRect(x+SHIP_W, ship1_pos_Y, 4, SHIP_H, 0x0000);
     previousMillis7 = currentMillis7;
   }
@@ -679,21 +706,8 @@ void moveLControlAll(void){
     }
     ship1_pos_X = x;
     ship1_pos_Y = 235-SHIP_H;
-    switch(ship_select1){    
-      case 0:
-        LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_azul);
-        break;
-      case 1:
-        LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_naranja);
-        break;
-      case 2:
-        LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_verde);
-        break;
-      default:
-        break;
-    }
+    shipSelect1();
     FillRect(x+SHIP_W, ship1_pos_Y, 4, SHIP_H, 0x0000);
-    //V_line(x + SHIP_W, ship1_pos_Y, SHIP_H, 0x0000);
     
     if(x1 <= 160){
       x1 = 160;
@@ -703,21 +717,8 @@ void moveLControlAll(void){
     }
     ship2_pos_X = x1;
     ship2_pos_Y = 235-SHIP_H;
-    switch(ship_select2){
-      case 0:
-        LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_azul);
-        break;
-      case 1:
-        LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_naranja);
-        break;
-      case 2:
-        LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_verde);
-        break;
-      default:
-        break;
-    }
+    shipSelect2();
     FillRect(x1+SHIP_W, ship2_pos_Y, 4, SHIP_H, 0x0000);
-    //V_line(x1 + SHIP_W, ship2_pos_Y, SHIP_H, 0x0000);
     previousMillis8 = currentMillis8;
   }
 }
@@ -732,21 +733,8 @@ void moveLRControl(void){
     }
     ship1_pos_X = x;
     ship1_pos_Y = 235-SHIP_H;
-    switch(ship_select1){    
-      case 0:
-        LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_azul);
-        break;
-      case 1:
-        LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_naranja);
-        break;
-      case 2:
-        LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_verde);
-        break;
-      default:
-        break;
-    }
+    shipSelect1();
     FillRect(x+SHIP_W, ship1_pos_Y, 4, SHIP_H, 0x0000);
-    //V_line(x + SHIP_W, ship1_pos_Y, SHIP_H, 0x0000);
     
     if(x1 >= 320-SHIP_W){
       x1 = 320-SHIP_W;
@@ -756,21 +744,8 @@ void moveLRControl(void){
     }
     ship2_pos_X = x1;
     ship2_pos_Y = 235-SHIP_H;
-    switch(ship_select2){
-      case 0:
-        LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_azul);
-        break;
-      case 1:
-        LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_naranja);
-        break;
-      case 2:
-        LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_verde);
-        break;
-      default:
-        break;
-    }
+    shipSelect2();
     FillRect(x1 - 4, ship2_pos_Y, 4, SHIP_H, 0x0000);
-    //V_line(x1 - 1, ship2_pos_Y, SHIP_H, 0x0000);
     previousMillis9 = currentMillis9;
   }
 }
@@ -785,21 +760,8 @@ void moveRLControl(void){
     }
     ship1_pos_X = x;
     ship1_pos_Y = 235-SHIP_H;
-    switch(ship_select1){    
-      case 0:
-        LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_azul);
-        break;
-      case 1:
-        LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_naranja);
-        break;
-      case 2:
-        LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_verde);
-        break;
-      default:
-        break;
-    }
+    shipSelect1();
     FillRect(x - 4, ship1_pos_Y, 4, SHIP_H, 0x0000);
-    //V_line(x - 1, ship1_pos_Y, SHIP_H, 0x0000);
     
     if(x1 <= 160){
       x1 = 160;
@@ -809,21 +771,8 @@ void moveRLControl(void){
     }
     ship2_pos_X = x1;
     ship2_pos_Y = 235-SHIP_H;
-    switch(ship_select2){
-      case 0:
-        LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_azul);
-        break;
-      case 1:
-        LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_naranja);
-        break;
-      case 2:
-        LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_verde);
-        break;
-      default:
-        break;
-    }
+    shipSelect2();
     FillRect(x+SHIP_W, ship2_pos_Y, 4, SHIP_H, 0x0000);
-    //V_line(x1 + SHIP_W, ship2_pos_Y, SHIP_H, 0x0000);
     previousMillis10 = currentMillis10;
   }
 }
@@ -838,21 +787,8 @@ void moveRControlAll(void){
     }
     ship1_pos_X = x;
     ship1_pos_Y = 235-SHIP_H;
-    switch(ship_select1){    
-      case 0:
-        LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_azul);
-        break;
-      case 1:
-        LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_naranja);
-        break;
-      case 2:
-        LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_verde);
-        break;
-      default:
-        break;
-    }
+    shipSelect1();
     FillRect(x - 4, ship1_pos_Y, 4, SHIP_H, 0x0000);
-    //V_line(x - 1, ship1_pos_Y, SHIP_H, 0x0000);
     
     if(x1 >= 320-SHIP_W){
       x1 = 320-SHIP_W;
@@ -862,21 +798,8 @@ void moveRControlAll(void){
     }
     ship2_pos_X = x1;
     ship2_pos_Y = 235-SHIP_H;
-    switch(ship_select2){
-      case 0:
-        LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_azul);
-        break;
-      case 1:
-        LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_naranja);
-        break;
-      case 2:
-        LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_verde);
-        break;
-      default:
-        break;
-    }
+    shipSelect2();
     FillRect(x1 - 4, ship2_pos_Y, 4, SHIP_H, 0x0000);
-    //V_line(x1 - 1, ship2_pos_Y, SHIP_H, 0x0000);
     previousMillis11 = currentMillis11;
   }
 }
@@ -891,21 +814,8 @@ void moveRControl1(void){
     }
     ship1_pos_X = x;
     ship1_pos_Y = 235-SHIP_H;
-    switch(ship_select1){    
-      case 0:
-        LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_azul);
-        break;
-      case 1:
-        LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_naranja);
-        break;
-      case 2:
-        LCD_Bitmap(ship1_pos_X, ship1_pos_Y, SHIP_W, SHIP_H, nave_verde);
-        break;
-      default:
-        break;
-    }
+    shipSelect1();
     FillRect(x - 4, ship1_pos_Y, 4, SHIP_H, 0x0000);
-    //V_line(x - 1, ship1_pos_Y, SHIP_H, 0x0000);
     previousMillis12 = currentMillis12;
   }
 }
@@ -920,19 +830,7 @@ void moveRControl2(void){
     }
     ship2_pos_X = x1;
     ship2_pos_Y = 235-SHIP_H;
-    switch(ship_select2){
-      case 0:
-        LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_azul);
-        break;
-      case 1:
-        LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_naranja);
-        break;
-      case 2:
-        LCD_Bitmap(ship2_pos_X, ship2_pos_Y, SHIP_W, SHIP_H, nave_verde);
-        break;
-      default:
-        break;
-    }
+    shipSelect2();
     FillRect(x1 - 4, ship2_pos_Y, 4, SHIP_H, 0x0000);
     previousMillis13 = currentMillis13;
   }
